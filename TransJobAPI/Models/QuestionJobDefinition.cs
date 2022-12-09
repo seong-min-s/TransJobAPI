@@ -24,5 +24,8 @@ namespace TransJobAPI.Models
         [ForeignKey(nameof(JobDefinitionId))]
         [InverseProperty("QuestionJobDefinitions")]
         public virtual JobDefinition JobDefinition { get; set; }
+        [ForeignKey(nameof(QuestionId))]
+        [InverseProperty("QuestionJobDefinitions")]
+        public virtual Question Question { get; set; }
     }
 }

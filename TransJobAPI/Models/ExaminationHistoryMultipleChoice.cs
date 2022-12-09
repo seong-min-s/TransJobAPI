@@ -33,6 +33,9 @@ namespace TransJobAPI.Models
         [Column("employeeId")]
         public long EmployeeId { get; set; }
 
+        [ForeignKey(nameof(EmployeeId))]
+        [InverseProperty("ExaminationHistoryMultipleChoices")]
+        public virtual Employee Employee { get; set; }
         [ForeignKey(nameof(ExaminationHistoryId))]
         [InverseProperty("ExaminationHistoryMultipleChoices")]
         public virtual ExaminationHistory ExaminationHistory { get; set; }

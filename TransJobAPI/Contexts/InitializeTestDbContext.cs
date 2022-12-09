@@ -18,11 +18,14 @@ namespace TransJobAPI.Contexts
         {
         }
 
+        public virtual DbSet<Employee> Employees { get; set; }
+        public virtual DbSet<ExamAssignLevel> ExamAssignLevels { get; set; }
         public virtual DbSet<ExaminationHistory> ExaminationHistories { get; set; }
         public virtual DbSet<ExaminationHistoryMultipleChoice> ExaminationHistoryMultipleChoices { get; set; }
         public virtual DbSet<JobDefinition> JobDefinitions { get; set; }
         public virtual DbSet<JobDefinitionDepthThreeOrder> JobDefinitionDepthThreeOrders { get; set; }
         public virtual DbSet<MultipleChoiceQuestion> MultipleChoiceQuestions { get; set; }
+        public virtual DbSet<Question> Questions { get; set; }
         public virtual DbSet<QuestionJobDefinition> QuestionJobDefinitions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -38,8 +41,27 @@ namespace TransJobAPI.Contexts
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Korean_Wansung_CI_AS");
 
+            modelBuilder.Entity<ExamAssignLevel>(entity =>
+            {
+                entity.HasOne(d => d.History)
+                    .WithMany(p => p.ExamAssignLevels)
+                    .HasForeignKey(d => d.HistoryId)
+                    .HasConstraintName("FK__ExamAssig__Histo__19AACF41");
+
+                entity.HasOne(d => d.Order)
+                    .WithMany(p => p.ExamAssignLevels)
+                    .HasForeignKey(d => d.OrderId)
+                    .HasConstraintName("FK__ExamAssig__Order__1A9EF37A");
+            });
+
             modelBuilder.Entity<ExaminationHistory>(entity =>
             {
+                entity.HasOne(d => d.Employee)
+                    .WithMany(p => p.ExaminationHistories)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_JOBTRANS_KTL_dbo_ExaminationHistory_employee");
+
                 entity.HasOne(d => d.JobDefinition)
                     .WithMany(p => p.ExaminationHistories)
                     .HasForeignKey(d => d.JobDefinitionId)
@@ -49,6 +71,12 @@ namespace TransJobAPI.Contexts
 
             modelBuilder.Entity<ExaminationHistoryMultipleChoice>(entity =>
             {
+                entity.HasOne(d => d.Employee)
+                    .WithMany(p => p.ExaminationHistoryMultipleChoices)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_JOBTRANS_KTL_dbo_ExaminationHistoryMultipleChoice_employee");
+
                 entity.HasOne(d => d.ExaminationHistory)
                     .WithMany(p => p.ExaminationHistoryMultipleChoices)
                     .HasForeignKey(d => d.ExaminationHistoryId)
@@ -85,6 +113,15 @@ namespace TransJobAPI.Contexts
                     .HasConstraintName("FK__JobDefini__JobDe__16CE6296");
             });
 
+            modelBuilder.Entity<MultipleChoiceQuestion>(entity =>
+            {
+                entity.HasOne(d => d.Question)
+                    .WithMany(p => p.MultipleChoiceQuestions)
+                    .HasForeignKey(d => d.QuestionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_JOBTRANS_KTL_dbo_MultipleChoiceQuestion_question");
+            });
+
             modelBuilder.Entity<QuestionJobDefinition>(entity =>
             {
                 entity.HasOne(d => d.JobDefinition)
@@ -92,6 +129,12 @@ namespace TransJobAPI.Contexts
                     .HasForeignKey(d => d.JobDefinitionId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_JOBTRANS_KTL_dbo_QuestionJobDefinition_jobDefinition");
+
+                entity.HasOne(d => d.Question)
+                    .WithMany(p => p.QuestionJobDefinitions)
+                    .HasForeignKey(d => d.QuestionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_JOBTRANS_KTL_dbo_QuestionJobDefinition_question");
             });
 
             OnModelCreatingPartial(modelBuilder);

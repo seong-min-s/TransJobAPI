@@ -11,6 +11,11 @@ namespace TransJobAPI.Models
     [Table("JobDefinitionDepthThreeOrder")]
     public partial class JobDefinitionDepthThreeOrder
     {
+        public JobDefinitionDepthThreeOrder()
+        {
+            ExamAssignLevels = new HashSet<ExamAssignLevel>();
+        }
+
         [Key]
         public long Id { get; set; }
         public long ExaminationHistoryId { get; set; }
@@ -22,5 +27,7 @@ namespace TransJobAPI.Models
         [ForeignKey(nameof(JobDefinitionId))]
         [InverseProperty("JobDefinitionDepthThreeOrders")]
         public virtual JobDefinition JobDefinition { get; set; }
+        [InverseProperty(nameof(ExamAssignLevel.Order))]
+        public virtual ICollection<ExamAssignLevel> ExamAssignLevels { get; set; }
     }
 }

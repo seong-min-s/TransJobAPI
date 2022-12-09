@@ -15,6 +15,7 @@ namespace TransJobAPI.Models
     {
         public ExaminationHistory()
         {
+            ExamAssignLevels = new HashSet<ExamAssignLevel>();
             ExaminationHistoryMultipleChoices = new HashSet<ExaminationHistoryMultipleChoice>();
             JobDefinitionDepthThreeOrders = new HashSet<JobDefinitionDepthThreeOrder>();
         }
@@ -37,9 +38,14 @@ namespace TransJobAPI.Models
         [Column("employeeId")]
         public long EmployeeId { get; set; }
 
+        [ForeignKey(nameof(EmployeeId))]
+        [InverseProperty("ExaminationHistories")]
+        public virtual Employee Employee { get; set; }
         [ForeignKey(nameof(JobDefinitionId))]
         [InverseProperty("ExaminationHistories")]
         public virtual JobDefinition JobDefinition { get; set; }
+        [InverseProperty(nameof(ExamAssignLevel.History))]
+        public virtual ICollection<ExamAssignLevel> ExamAssignLevels { get; set; }
         [InverseProperty(nameof(ExaminationHistoryMultipleChoice.ExaminationHistory))]
         public virtual ICollection<ExaminationHistoryMultipleChoice> ExaminationHistoryMultipleChoices { get; set; }
         [InverseProperty(nameof(JobDefinitionDepthThreeOrder.ExaminationHistory))]

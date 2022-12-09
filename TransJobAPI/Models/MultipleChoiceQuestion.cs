@@ -54,6 +54,9 @@ namespace TransJobAPI.Models
         [StringLength(100)]
         public string JobDefinitionDepth3Name { get; set; }
 
+        [ForeignKey(nameof(QuestionId))]
+        [InverseProperty("MultipleChoiceQuestions")]
+        public virtual Question Question { get; set; }
         [InverseProperty(nameof(ExaminationHistoryMultipleChoice.MultipleQuestion))]
         public virtual ICollection<ExaminationHistoryMultipleChoice> ExaminationHistoryMultipleChoices { get; set; }
     }
