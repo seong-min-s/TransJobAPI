@@ -17,16 +17,15 @@ namespace TransJobAPI.Controllers
         [HttpPost]
         public IActionResult Post(ExaminationHistoryMultipleChoice question)
         {
-            /*객관식 출제 문제 기록 불러오기*/
             var db = new InitializeTestDbContext();
             var orders = db.JobDefinitionDepthThreeOrders.Where(p => p.ExaminationHistoryId == question.ExaminationHistoryId).ToList();
-            var examinationHistoryMultipleChoices = db.ExaminationHistoryMultipleChoices.Where(
-                p => p.ExaminationHistoryId == question.ExaminationHistoryId
-            ).OrderByDescending(p => p.Seq).ToList();
-            int num = examinationHistoryMultipleChoices.Count();
 
-            /*정답 체크*/
+            int examNum = (int)question.Seq;
+            int prevLevel;
+            int nowLevel;
+
             {
+                /*채점*/
                 long questionId = question.MultipleQuestionId;
                 string userAnswer = question.Answer;
                 var t = db.ExaminationHistoryMultipleChoices.Find(question.Id);
@@ -39,56 +38,75 @@ namespace TransJobAPI.Controllers
                 {
                     t.Whether = false;
                 }
+
                 db.SaveChanges();
 
-                if (num % MAX != 1)
+                if (examNum % 5 != 1)
                 {
-                    int previousMultipleQuestionId = (int)examinationHistoryMultipleChoices[1].MultipleQuestionId;
-                    bool bPreviousIsRight = (bool)examinationHistoryMultipleChoices[1].Whether;
-                    var previousQuestion = db.MultipleChoiceQuestions.Where(p => p.Id == previousMultipleQuestionId).FirstOrDefault();
+                    var examinationHistoryMultipleChoices = db.ExaminationHistoryMultipleChoices.Where(
+                    p => p.ExaminationHistoryId == question.ExaminationHistoryId).OrderByDescending(p => p.Seq).ToList();
 
-                    int presentMultipleQuestionId = (int)examinationHistoryMultipleChoices[0].MultipleQuestionId;
-                    bool bPresentIsRight = (bool)examinationHistoryMultipleChoices[0].Whether;
-                    var presentQuestion = db.MultipleChoiceQuestions.Where(p => p.Id == presentMultipleQuestionId).FirstOrDefault();
+                    int nowMultipleQuestionId = (int)examinationHistoryMultipleChoices[0].MultipleQuestionId;
+                    bool bNowIsRight = (bool)examinationHistoryMultipleChoices[0].Whether;
+                    var nowQuestion = db.MultipleChoiceQuestions.Where(p => p.Id == nowMultipleQuestionId).FirstOrDefault();
+                    nowLevel = (int)nowQuestion.QuestionLevel;
+                    
+                    int prevMultipleQuestionId = (int)examinationHistoryMultipleChoices[1].MultipleQuestionId;
+                    bool bPrevIsRight = (bool)examinationHistoryMultipleChoices[1].Whether;
+                    var prevQuestion = db.MultipleChoiceQuestions.Where(p => p.Id == prevMultipleQuestionId).FirstOrDefault();
+                    prevLevel = (int)prevQuestion.QuestionLevel;
 
-                    if (previousQuestion.QuestionLevel == previousQuestion.QuestionLevel &&
-                        bPreviousIsRight == bPreviousIsRight)
+                    if (prevLevel == nowLevel && bPrevIsRight == bNowIsRight)
                     {
-                        //정답여부에 따른 설정 변경
+                        var userInfo = db.ExamAssignLevels.Where(p => p.HistoryId == question.ExaminationHistoryId
+                        && p.OrderId == orders[(examNum - 1) / 5].JobDefinitionId).FirstOrDefault();
+
+                        if (bNowIsRight == true)
+                        {
+                            if (userInfo.Level < 3)
+                            {
+                                ++userInfo.Level;
+                            }
+                        }
+                        else
+                        {
+                            if (userInfo.Level > 1)
+                            {
+                                --userInfo.Level;
+                            }
+                        }
+                        db.SaveChanges();
                     }
                 }
 
-
-                if (num % MAX != 0)
+                if (examNum % MAX != 0)
                 {
                     goto CREATE_QUESTION;
                 }
                 else
                 {
-                    if (num / MAX == 3)
+                    if (examNum / MAX == orders.Count())
                     {
                         return Ok("Completed");
                     }
-                    //다음세부유형으로 진행
                 }
             }
 
         CREATE_QUESTION:
             /*문제출제*/
             {
-                //다음 문제의 직무 id 추출
-                int depthThreeJobDefinitionId = (int)orders[(num / 5) + 1].JobDefinitionId;
-                //get level in multipleChoiceQuestions 이전 문제 정답 여부에 따라 달라지는 코드 추가해야함
-                int questionId = (int)examinationHistoryMultipleChoices[0].MultipleQuestionId;
-                int nextLevel = (int)db.MultipleChoiceQuestions.Where(p => p.Id == questionId).FirstOrDefault().QuestionLevel;
+                int orderIdx = ((examNum + 1 - 1) / 5);
+                int depthThreeJobDefinitionId = (int)orders[orderIdx].JobDefinitionId;
+                int nextLevel = (int)db.ExamAssignLevels.Where(p => p.HistoryId == question.ExaminationHistoryId
+                                    && p.OrderId == depthThreeJobDefinitionId).FirstOrDefault().Level;
 
-                /*문제 가져오기 그리고 세부유형과 수준에 맞는 문제를 POOL에 넣기*/
                 List<MultipleChoiceQuestion> questionPool = new List<MultipleChoiceQuestion>();
                 var questions = db.MultipleChoiceQuestions.ToList();
                 for (int i = 0; i < questions.Count(); ++i)
                 {
-                    long jobDefinitionId = db.QuestionJobDefinitions.Find(questions[i].QuestionId).JobDefinitionId;
-                    long level = (long)questions[i].QuestionLevel;
+                    int jobDefinitionId = (int)db.QuestionJobDefinitions.Where(p => p.QuestionId == questions[i].QuestionId).FirstOrDefault().JobDefinitionId;
+                    int level = (int)questions[i].QuestionLevel;
+
                     if (jobDefinitionId == depthThreeJobDefinitionId
                         && level == nextLevel)
                     {
@@ -99,15 +117,13 @@ namespace TransJobAPI.Controllers
                 Random rnd = new Random();
                 int randomIdx = rnd.Next(questionPool.Count());
 
-                ExaminationHistoryMultipleChoice emc = new ExaminationHistoryMultipleChoice
-                {
-                    ExaminationHistoryId = question.ExaminationHistoryId,
-                    MultipleQuestionId = questionPool[randomIdx].Id,
-                    Seq = question.Seq + 1,
-                    Answer = null,
-                    Whether = null,
-                    EmployeeId = question.EmployeeId
-                };
+                ExaminationHistoryMultipleChoice emc = new ExaminationHistoryMultipleChoice();
+                emc.ExaminationHistoryId = question.ExaminationHistoryId;
+                emc.MultipleQuestionId = questionPool[randomIdx].Id;
+                emc.Seq = question.Seq + 1;
+                emc.Answer = null;
+                emc.Whether = null;
+                emc.EmployeeId = question.EmployeeId;
 
                 db.ExaminationHistoryMultipleChoices.Add(emc);
                 db.SaveChanges();
