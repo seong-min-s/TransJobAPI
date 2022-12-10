@@ -83,10 +83,16 @@ namespace TransJobAPI.Controllers
                         order.ExaminationHistoryId = examinationHistory.Id;
                         order.JobDefinitionId = jobDefinitionDepthThreeList[depthThreeListIndex].Id;
                         db.JobDefinitionDepthThreeOrders.Add(order);
+
+                        ExamAssignLevel userLevel = new ExamAssignLevel();
+                        userLevel.HistoryId = examinationHistory.Id;
+                        userLevel.OrderId = order.JobDefinitionId;
+                        userLevel.Level = examinationHistory.Level;
+
+                        db.ExamAssignLevels.Add(userLevel);
                     }
                 }
                 db.SaveChanges();
-
                 var firstOrder = db.JobDefinitionDepthThreeOrders.Where(p => p.ExaminationHistoryId == examinationHistory.Id).FirstOrDefault();
 
                 List<MultipleChoiceQuestion> firstJobDefinitionDepthThreeQuestions = new List<MultipleChoiceQuestion>();
@@ -97,7 +103,8 @@ namespace TransJobAPI.Controllers
                     long questionJobDefinitionId = questionJobDefinitionList.Where(p => p.QuestionId == questionId).FirstOrDefault().JobDefinitionId;
 
                     //첫 세부유형의 객관식 문제 리스트 생성
-                    if (questionJobDefinitionId == firstOrder.JobDefinitionId && multipleChoiceQuestionList[i].QuestionLevel == examinationHistory.Level)
+                    if (questionJobDefinitionId == firstOrder.JobDefinitionId &&
+                        multipleChoiceQuestionList[i].QuestionLevel == examinationHistory.Level)
                     {
                         firstJobDefinitionDepthThreeQuestions.Add(multipleChoiceQuestionList[i]);
                     }
@@ -105,8 +112,8 @@ namespace TransJobAPI.Controllers
 
                 //첫 세부유형의 객관식 문제 리스트에서 한 개의 문제 랜덤추출
                 Random rnd = new Random();
-                if (firstJobDefinitionDepthThreeQuestions.Count > 0) 
-                { 
+                if (firstJobDefinitionDepthThreeQuestions.Count > 0)
+                {
                     int randomIdx = rnd.Next(firstJobDefinitionDepthThreeQuestions.Count());
 
                     ExaminationHistoryMultipleChoice emc = new ExaminationHistoryMultipleChoice();
@@ -119,7 +126,7 @@ namespace TransJobAPI.Controllers
 
                     db.ExaminationHistoryMultipleChoices.Add(emc);
                     db.SaveChanges();
-                    
+
                     return Ok(multipleChoiceQuestionList[(int)firstJobDefinitionDepthThreeQuestions[randomIdx].Id]);
                 }
 
