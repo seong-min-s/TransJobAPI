@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using TransJobAPI.Contexts;
 using TransJobAPI.Models;
@@ -21,7 +22,8 @@ namespace TransJobAPI.Controllers
             return Ok(list);
         }
         [HttpPost]
-        public IActionResult Post(ExaminationHistory examinationHistory)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<ExaminationHistoryMultipleChoiceDTO> Post(ExaminationHistory examinationHistory)
         {
             /*depth3이고 사용자 선택에 맞는 세부유형 추출*/
             List<JobDefinition> jobDefinitionDepthThreeList = new List<JobDefinition>();
@@ -92,6 +94,7 @@ namespace TransJobAPI.Controllers
                         db.ExamAssignLevels.Add(userLevel);
                     }
                 }
+
                 db.SaveChanges();
                 var firstOrder = db.JobDefinitionDepthThreeOrders.Where(p => p.ExaminationHistoryId == examinationHistory.Id).FirstOrDefault();
 
@@ -115,25 +118,44 @@ namespace TransJobAPI.Controllers
                 if (firstJobDefinitionDepthThreeQuestions.Count > 0)
                 {
                     int randomIdx = rnd.Next(firstJobDefinitionDepthThreeQuestions.Count());
+                    ExaminationHistoryMultipleChoice emc = new ExaminationHistoryMultipleChoice()
+                    {
+                        ExaminationHistoryId = examinationHistory.Id,
+                        MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].Id,
+                        Seq = 1,
+                        Answer = "",
+                        Whether = null,
+                        EmployeeId = examinationHistory.EmployeeId
+                    };
+                    var e = questionJobDefinitionList.Where(p => p.QuestionId == firstJobDefinitionDepthThreeQuestions[randomIdx].QuestionId).FirstOrDefault();
 
-                    ExaminationHistoryMultipleChoice emc = new ExaminationHistoryMultipleChoice();
-                    emc.ExaminationHistoryId = examinationHistory.Id;
-                    emc.MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].Id;
-                    emc.Seq = 1;
-                    emc.Answer = "test";
-                    emc.Whether = false;
-                    emc.EmployeeId = examinationHistory.EmployeeId;
+                    StringBuilder sb = new StringBuilder(512);
+                    sb.Append("#");
+                    sb.Append(firstJobDefinitionDepthThreeQuestions[randomIdx].Answer1);
+                    sb.Append("#");
+                    sb.Append(firstJobDefinitionDepthThreeQuestions[randomIdx].Answer2);
+                    sb.Append("#");
+                    sb.Append(firstJobDefinitionDepthThreeQuestions[randomIdx].Answer3);
+                    sb.Append("#");
+                    sb.Append(firstJobDefinitionDepthThreeQuestions[randomIdx].Answer4);
+
+                    ExaminationHistoryMultipleChoiceDTO emcDTO = new ExaminationHistoryMultipleChoiceDTO()
+                    {
+                        ExaminationHistoryId = examinationHistory.Id,
+                        MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].Id,
+                        JobDefinitionId = e.JobDefinitionId,
+
+                        Answer = sb.ToString(),
+                        Contents = firstJobDefinitionDepthThreeQuestions[randomIdx].QuestionContents
+                    };
 
                     db.ExaminationHistoryMultipleChoices.Add(emc);
                     db.SaveChanges();
 
-                    return Ok(multipleChoiceQuestionList[(int)firstJobDefinitionDepthThreeQuestions[randomIdx].Id - 1]);
+                    return Ok(emcDTO);
                 }
-
-                return BadRequest("baddd");
             }
-
-            return Ok();
+            return NotFound();
         }
     }
 }
