@@ -121,7 +121,7 @@ namespace TransJobAPI.Controllers
                     ExaminationHistoryMultipleChoice emc = new ExaminationHistoryMultipleChoice()
                     {
                         ExaminationHistoryId = examinationHistory.Id,
-                        MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].Id,
+                        MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].QuestionId,
                         Seq = 1,
                         Answer = "",
                         Whether = null,
@@ -142,7 +142,7 @@ namespace TransJobAPI.Controllers
                     ExaminationHistoryMultipleChoiceDTO emcDTO = new ExaminationHistoryMultipleChoiceDTO()
                     {
                         ExaminationHistoryId = examinationHistory.Id,
-                        MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].Id,
+                        MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].QuestionId,
                         JobDefinitionId = e.JobDefinitionId,
 
                         Answer = sb.ToString(),

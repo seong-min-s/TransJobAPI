@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using TransJobAPI.Contexts;
 using TransJobAPI.Models;
@@ -15,7 +16,7 @@ namespace TransJobAPI.Controllers
     {
         const int MAX = 5;
         [HttpPost]
-        public IActionResult Post(ExaminationHistoryMultipleChoice question)
+        public ActionResult<ExaminationHistoryMultipleChoiceDTO> Post(ExaminationHistoryMultipleChoice question)
         {
             var db = new InitializeTestDbContext();
             var orders = db.JobDefinitionDepthThreeOrders.Where(p => p.ExaminationHistoryId == question.ExaminationHistoryId).ToList();
@@ -28,7 +29,8 @@ namespace TransJobAPI.Controllers
                 /*채점*/
                 long questionId = question.MultipleQuestionId;
                 string userAnswer = question.Answer;
-                var t = db.ExaminationHistoryMultipleChoices.Find(question.Id);
+                var t = db.ExaminationHistoryMultipleChoices.Where(p => p.ExaminationHistoryId == question.ExaminationHistoryId && p.MultipleQuestionId == question.MultipleQuestionId).FirstOrDefault();
+         
 
                 if (String.Equals(db.MultipleChoiceQuestions.Find(questionId).RealAnswer, userAnswer) == true)
                 {
@@ -128,7 +130,29 @@ namespace TransJobAPI.Controllers
                 db.ExaminationHistoryMultipleChoices.Add(emc);
                 db.SaveChanges();
 
-                return Ok(questionPool[randomIdx]);
+                var e = db.QuestionJobDefinitions.Where(p => p.QuestionId == questionPool[randomIdx].QuestionId).FirstOrDefault();
+
+                StringBuilder sb = new StringBuilder(512);
+                sb.Append("#");
+                sb.Append(questionPool[randomIdx].Answer1);
+                sb.Append("#");
+                sb.Append(questionPool[randomIdx].Answer2);
+                sb.Append("#");
+                sb.Append(questionPool[randomIdx].Answer3);
+                sb.Append("#");
+                sb.Append(questionPool[randomIdx].Answer4);
+
+                ExaminationHistoryMultipleChoiceDTO emcDTO = new ExaminationHistoryMultipleChoiceDTO()
+                {
+                    ExaminationHistoryId = emc.ExaminationHistoryId,
+                    MultipleQuestionId = emc.MultipleQuestionId,
+                    JobDefinitionId = e.JobDefinitionId,
+
+                    Answer = sb.ToString(),
+                    Contents = questionPool[randomIdx].QuestionContents
+                };
+
+                return Ok(emcDTO);
             }
         }
     }
