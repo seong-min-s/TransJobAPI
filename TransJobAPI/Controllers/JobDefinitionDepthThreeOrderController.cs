@@ -127,7 +127,7 @@ namespace TransJobAPI.Controllers
                     db.ExaminationHistoryMultipleChoices.Add(emc);
                     db.SaveChanges();
 
-                    return Ok(multipleChoiceQuestionList[(int)firstJobDefinitionDepthThreeQuestions[randomIdx].Id]);
+                    return Ok(multipleChoiceQuestionList[(int)firstJobDefinitionDepthThreeQuestions[randomIdx].Id - 1]);
                 }
 
                 return BadRequest("baddd");
