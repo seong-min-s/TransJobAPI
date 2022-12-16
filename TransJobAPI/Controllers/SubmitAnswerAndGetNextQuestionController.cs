@@ -18,13 +18,19 @@ namespace TransJobAPI.Controllers
         [HttpPost]
         public ActionResult<ExaminationHistoryMultipleChoiceDTO> Post(ExaminationHistoryMultipleChoiceDTO question)
         {
+            var db = new InitializeTestDbContext();
+            var examinationHistory = db.ExaminationHistories.Find(question.ExaminationHistoryId);
+            
             if (ModelState.IsValid == false)
             {
                 return BadRequest("answer is InValid");
             }
-            var db = new InitializeTestDbContext();
-            var orders = db.JobDefinitionDepthThreeOrders.Where(p => p.ExaminationHistoryId == question.ExaminationHistoryId).ToList();
+            else if (examinationHistory.IsComplete == true)
+            {
+                return Ok("Completed.");
+            }
 
+            var orders = db.JobDefinitionDepthThreeOrders.Where(p => p.ExaminationHistoryId == question.ExaminationHistoryId).ToList();
             var examinationHistoryMultipleChoices = db.ExaminationHistoryMultipleChoices.Where(
                     p => p.ExaminationHistoryId == question.ExaminationHistoryId).OrderByDescending(p => p.Seq).ToList();
 
@@ -32,6 +38,7 @@ namespace TransJobAPI.Controllers
             int examNum = (int)examinationHistoryMultipleChoices[0].Seq;
             int prevLevel;
             int nowLevel;
+
             {
                 /*채점*/
                 long questionId = question.MultipleQuestionId;
@@ -93,6 +100,8 @@ namespace TransJobAPI.Controllers
                 {
                     if (examNum / MAX == orders.Count())
                     {
+                        db.ExaminationHistories.Find(question.ExaminationHistoryId).IsComplete = true;
+                        db.SaveChanges();
                         return Ok("Completed");
                     }
                 }
