@@ -7,6 +7,7 @@ namespace TransJobAPI.Controllers
 {
     public class ExaminationHistoryMultipleChoiceDTO
     {
+        public long EmployeeId { get; set; }
         public long ExaminationHistoryId { get; set; }
         public long MultipleQuestionId { get; set; }
         public long JobDefinitionId { get; set; }

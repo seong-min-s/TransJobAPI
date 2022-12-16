@@ -120,12 +120,12 @@ namespace TransJobAPI.Controllers
                     int randomIdx = rnd.Next(firstJobDefinitionDepthThreeQuestions.Count());
                     ExaminationHistoryMultipleChoice emc = new ExaminationHistoryMultipleChoice()
                     {
+                        EmployeeId = examinationHistory.EmployeeId,
                         ExaminationHistoryId = examinationHistory.Id,
                         MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].Id,
                         Seq = 1,
                         Answer = "",
-                        Whether = null,
-                        EmployeeId = examinationHistory.EmployeeId
+                        Whether = null
                     };
                     var e = questionJobDefinitionList.Where(p => p.QuestionId == firstJobDefinitionDepthThreeQuestions[randomIdx].QuestionId).FirstOrDefault();
 
@@ -141,10 +141,10 @@ namespace TransJobAPI.Controllers
 
                     ExaminationHistoryMultipleChoiceDTO emcDTO = new ExaminationHistoryMultipleChoiceDTO()
                     {
+                        EmployeeId = examinationHistory.EmployeeId,
                         ExaminationHistoryId = examinationHistory.Id,
                         MultipleQuestionId = firstJobDefinitionDepthThreeQuestions[randomIdx].Id,
                         JobDefinitionId = e.JobDefinitionId,
-
                         Answer = sb.ToString(),
                         Contents = firstJobDefinitionDepthThreeQuestions[randomIdx].QuestionContents
                     };
