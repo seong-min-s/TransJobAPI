@@ -38,9 +38,9 @@ namespace TransJobAPI.Controllers
             int examNum = (int)examinationHistoryMultipleChoices[0].Seq;
             int prevLevel;
             int nowLevel;
-
+            /*채점과 등급 조정*/
             {
-                /*채점*/
+                
                 long questionId = question.MultipleQuestionId;
                 string userAnswer = question.Answer;
                 var t = db.ExaminationHistoryMultipleChoices.Where(p => p.ExaminationHistoryId == question.ExaminationHistoryId && p.MultipleQuestionId == question.MultipleQuestionId).FirstOrDefault();
@@ -110,7 +110,7 @@ namespace TransJobAPI.Controllers
         CREATE_QUESTION:
             /*문제출제*/
             {
-                int orderIdx = ((examNum + 1 - 1) / 5);
+                int orderIdx = examNum / 5;
                 int depthThreeJobDefinitionId = (int)orders[orderIdx].JobDefinitionId;
                 int nextLevel = (int)db.ExamAssignLevels.Where(p => p.HistoryId == question.ExaminationHistoryId
                                     && p.OrderId == depthThreeJobDefinitionId).FirstOrDefault().Level;
@@ -132,6 +132,7 @@ namespace TransJobAPI.Controllers
                 Random rnd = new Random();
                 int randomIdx = rnd.Next(questionPool.Count());
 
+                /*사용자 답변 기록을 위한 객관식 문제 테이블 테이블 저장용 데이터*/
                 ExaminationHistoryMultipleChoice emc = new ExaminationHistoryMultipleChoice
                 {
                     EmployeeId = question.EmployeeId,
@@ -145,7 +146,6 @@ namespace TransJobAPI.Controllers
                 p.MultipleQuestionId == emc.MultipleQuestionId).Count() > 0;
 
                 
-
                 if (bIsDuplicated == true)
                 {
                     goto EXTRACT_RANDOM_IDX;
@@ -164,7 +164,8 @@ namespace TransJobAPI.Controllers
                 sb.Append("#");
                 sb.Append(questionPool[randomIdx].Answer4);
                 var qJobDefinition = db.QuestionJobDefinitions.Where(p => p.QuestionId == questionPool[randomIdx].QuestionId).FirstOrDefault();
-
+                
+                /*사용자 답변 기록을 위한 객관식 문제 테이블 전송용 데이터*/
                 ExaminationHistoryMultipleChoiceDTO emcDTO = new ExaminationHistoryMultipleChoiceDTO()
                 {
 
